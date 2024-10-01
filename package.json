@@ -18,7 +18,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/stackblitz/use-stick-to-bottom.git"
+    "url": "https://github.com/oliakaoil/use-stick-to-bottom.git"
   },
   "peerDependencies": {
     "react": "^16.8.0 || ^17.0.0 || ^18.0.0"
