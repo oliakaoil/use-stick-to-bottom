@@ -1,6 +1,6 @@
-import * as React from 'react';
-import { createContext, ReactNode, RefCallback, useContext, useLayoutEffect, useMemo } from 'react';
+import { createContext, FC, HTMLAttributes, ReactNode, RefCallback, useContext, useLayoutEffect } from 'react';
 import { ScrollToBottom, StickToBottomOptions, useStickToBottom } from './useStickToBottom.js';
+import { Content } from './content.js';
 
 export interface StickToBottomContext {
   contentRef: RefCallback<HTMLDivElement>;
@@ -11,17 +11,22 @@ export interface StickToBottomContext {
   escapedFromLock: boolean;
 }
 
-const StickToBottomContext = createContext<StickToBottomContext | null>(null);
+const StickToBottomContext = createContext<StickToBottomContext>({
+  contentRef: () => {},
+  scrollRef: () => {},
+  scrollToBottom: () => false,
+  isAtBottom: false,
+  isNearBottom: false,
+  escapedFromLock: false,
+});
 
-export interface StickToBottomProps
-  extends Omit<React.HTMLAttributes<HTMLDivElement>, 'children'>,
-    StickToBottomOptions {
-  instance?: ReturnType<typeof useStickToBottom>;
-  children: ((context: StickToBottomContext) => ReactNode) | ReactNode;
+export const useStickToBottomContext = () => useContext<StickToBottomContext>(StickToBottomContext);
+
+export interface StickToBottomProps extends Omit<HTMLAttributes<HTMLDivElement>, 'children'>, StickToBottomOptions {
+  children: ReactNode;
 }
 
-export function StickToBottom({
-  instance,
+export const StickToBottom: FC<StickToBottomProps> = ({
   children,
   resize,
   initial,
@@ -30,8 +35,8 @@ export function StickToBottom({
   stiffness,
   targetScrollTop,
   ...props
-}: StickToBottomProps) {
-  const defaultInstance = useStickToBottom({
+}) => {
+  const { scrollRef, contentRef, scrollToBottom, isAtBottom, isNearBottom, escapedFromLock } = useStickToBottom({
     mass,
     damping,
     stiffness,
@@ -39,20 +44,6 @@ export function StickToBottom({
     initial,
     targetScrollTop,
   });
-  const { scrollRef, contentRef, scrollToBottom, isAtBottom, isNearBottom, escapedFromLock } =
-    instance ?? defaultInstance;
-
-  const context = useMemo<StickToBottomContext>(
-    () => ({
-      scrollToBottom,
-      scrollRef,
-      isAtBottom,
-      isNearBottom,
-      escapedFromLock,
-      contentRef,
-    }),
-    [scrollToBottom, isAtBottom, contentRef, escapedFromLock]
-  );
 
   useLayoutEffect(() => {
     if (!scrollRef.current) {
@@ -64,45 +55,17 @@ export function StickToBottom({
     }
   }, []);
 
+  console.log('render');
+
   return (
-    <StickToBottomContext.Provider value={context}>
-      <div {...props}>{typeof children === 'function' ? children(context) : children}</div>
+    <StickToBottomContext.Provider
+      value={{ scrollRef, contentRef, scrollToBottom, isAtBottom, isNearBottom, escapedFromLock }}
+    >
+      <div {...props}>
+        <Content scrollRef={scrollRef} contentRef={contentRef}>
+          {children}
+        </Content>
+      </div>
     </StickToBottomContext.Provider>
   );
-}
-
-export namespace StickToBottom {
-  export interface ContentProps extends Omit<React.HTMLAttributes<HTMLDivElement>, 'children'> {
-    children: ((context: StickToBottomContext) => ReactNode) | ReactNode;
-  }
-
-  export function Content({ children, ...props }: ContentProps) {
-    const context = useStickToBottomContext();
-
-    return (
-      <div
-        ref={context.scrollRef}
-        style={{
-          height: '100%',
-          width: '100%',
-        }}
-      >
-        <div {...props} ref={context.contentRef}>
-          {typeof children === 'function' ? children(context) : children}
-        </div>
-      </div>
-    );
-  }
-}
-
-/**
- * Use this hook inside a <StickToBottom> component to gain access to whether the component is at the bottom of the scrollable area.
- */
-export function useStickToBottomContext() {
-  const context = useContext(StickToBottomContext);
-  if (!context) {
-    throw new Error('use-stick-to-bottom component context must be used within a StickToBottom component');
-  }
-
-  return context;
-}
+};

@@ -27,7 +27,7 @@ function Messages({ animation, speed }: { animation: ScrollBehavior; speed: numb
         resize={animation}
         initial={animation === 'instant' ? 'instant' : { mass: 10 }}
       >
-        <StickToBottom.Content className="flex flex-col gap-4 p-6">
+        <div className="flex flex-col gap-4 p-6">
           {[...Array(10)].map((_, i) => (
             <Message key={i}>
               <h1>This is a test</h1>
@@ -38,8 +38,7 @@ function Messages({ animation, speed }: { animation: ScrollBehavior; speed: numb
           {messages.map((message, i) => (
             <Message key={i}>{message}</Message>
           ))}
-        </StickToBottom.Content>
-
+        </div>
         <ScrollToBottom />
       </StickToBottom>
     </div>
